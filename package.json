@@ -1,0 +1,25 @@
+{
+  "name": "egoing-nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/taehwan920/egoing-nodejs.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/taehwan920/egoing-nodejs/issues"
+  },
+  "homepage": "https://github.com/taehwan920/egoing-nodejs#readme",
+  "dependencies": {
+    "sanitize-html": "^1.22.1"
+  }
+}
