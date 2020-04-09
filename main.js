@@ -3,33 +3,37 @@ const fs = require('fs');
 const url = require('url');
 const qs = require('querystring');
 
-const templateHTML = (title, list, body, control) => {
-    return (
-        `<!doctype html>
-            <html>
-                <head>
-                    <title>WEB1 - ${title}</title>
-                    <meta charset="utf-8">
-                </head>
-                <body>
-                    <h1><a href="/">WEB</a></h1>
-                    ${list}
-                    ${control}
-                    ${body}
-                </body>
-            </html>
-        `
-    );
-};
-
-const templateList = (fileList) => {
-    var list = '<ul>';
-    for (let i = 0; i < fileList.length; i++) {
-        list = list + `<li><a href="/?id=${fileList[i]}">${fileList[i]}</a></li>`
+const template = {
+    html: (title, list, body, control) => {
+        return (
+            `<!doctype html>
+                <html>
+                    <head>
+                        <title>WEB1 - ${title}</title>
+                        <meta charset="utf-8">
+                    </head>
+                    <body>
+                        <h1><a href="/">WEB</a></h1>
+                        ${list}
+                        ${control}
+                        ${body}
+                    </body>
+                </html>
+            `
+        );
+    },
+    list: (fileList) => {
+        var list = '<ul>';
+        for (let i = 0; i < fileList.length; i++) {
+            list = list + `<li><a href="/?id=${fileList[i]}">${fileList[i]}</a></li>`
+        }
+        list = list + '</ul>';
+        return list;
     }
-    list = list + '</ul>';
-    return list;
-};
+}
+
+const templateList = template.list;
+const templateHTML = template.html;
 
 const app = http.createServer(function (request, response) {
     const _url = request.url;
@@ -56,7 +60,7 @@ const app = http.createServer(function (request, response) {
                 fs.readFile(`data/${queryData.id}`, 'utf8', function (err, description) {
                     const title = queryData.id;
                     const list = templateList(fileList);
-                    const template = templateHTML(title, list,
+                    const html = templateHTML(title, list,
                         `<h2>${title}</h2>
                         <p>${description}</p>`,
                         `<a href="/create">Create</a> 
@@ -68,7 +72,7 @@ const app = http.createServer(function (request, response) {
                     );
 
                     response.writeHead(200);
-                    response.end(template);
+                    response.end(html);
                 });
             });
         }
@@ -76,7 +80,7 @@ const app = http.createServer(function (request, response) {
         fs.readdir('./data', function (error, fileList) {
             const title = 'Web - create';
             const list = templateList(fileList);
-            const template = templateHTML(title, list, `
+            const html = templateHTML(title, list, `
                 <form action="/create_process" method="post">
                     <p>
                         <input type="text" name="title" placeholder="title">
@@ -90,7 +94,7 @@ const app = http.createServer(function (request, response) {
                 </form>
                 `, '');
             response.writeHead(200);
-            response.end(template);
+            response.end(html);
         })
     } else if (pathName === '/create_process') {
         let body = '';
@@ -111,7 +115,7 @@ const app = http.createServer(function (request, response) {
             fs.readFile(`data/${queryData.id}`, 'utf8', function (err, description) {
                 const title = queryData.id;
                 const list = templateList(fileList);
-                const template = templateHTML(title, list,
+                const html = templateHTML(title, list,
                     `
                     <form action="/update_process" method="post">
                         <input type="hidden" name="id" value="${title}">
@@ -130,7 +134,7 @@ const app = http.createServer(function (request, response) {
                 );
 
                 response.writeHead(200);
-                response.end(template);
+                response.end(html);
             });
         });
     } else if (pathName === '/update_process') {
