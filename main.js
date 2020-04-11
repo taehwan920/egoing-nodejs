@@ -23,7 +23,7 @@ const app = http.createServer(function (request, response) {
     const pathName = url.parse(_url, true).pathname;
     if (pathName === '/') {
         if (queryData.id === undefined) {
-            db.query(`SELECT * FROM topic`, function (error, topics, ) {
+            db.query(`SELECT * FROM topic`, function (error, topics) {
                 const title = 'Welcome';
                 const description = 'Hello, Node.js';
                 const list = templateList(topics);
@@ -63,10 +63,10 @@ const app = http.createServer(function (request, response) {
             });
         }
     } else if (pathName === '/create') {
-        fs.readdir('./data', function (error, fileList) {
-            const title = 'Web - create';
-            const list = templateList(fileList);
-            const html = templateHTML(title, list, `
+        db.query(`SELECT * FROM topic`, function (error, topics) {
+            const title = 'Create';
+            const list = templateList(topics);
+            const template = templateHTML(title, list, `
                 <form action="/create_process" method="post">
                     <p>
                         <input type="text" name="title" placeholder="title">
@@ -77,11 +77,11 @@ const app = http.createServer(function (request, response) {
                     <p>
                         <input type="submit">
                     </p>
-                </form>
-                `, '');
+                </form>`
+                , '');
             response.writeHead(200);
-            response.end(html);
-        })
+            response.end(template);
+        });
     } else if (pathName === '/create_process') {
         let body = '';
         request.on('data', function (data) {
@@ -91,10 +91,17 @@ const app = http.createServer(function (request, response) {
             const post = qs.parse(body);
             const title = post.title;
             const description = post.description;
-            fs.writeFile(`data/${title}`, description, 'utf8', (err) => {
-                response.writeHead(302, { Location: `/?id=${title}` });
-                response.end('success');
-            });
+            db.query(`
+                INSERT INTO topic (title, description, created, author_id) 
+                VALUES (?, ?, NOW(), ?)`,
+                [title, description, 1],
+                function (error, result) {
+                    if (error) {
+                        throw error;
+                    }
+                    response.writeHead(302, { Location: `/?id=${result.insertId}` });
+                    response.end();
+                });
         });
     } else if (pathName === '/update') {
         fs.readdir('./data', function (error, fileList) {
