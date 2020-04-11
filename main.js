@@ -23,21 +23,7 @@ const app = http.createServer(function (request, response) {
     const pathName = url.parse(_url, true).pathname;
     if (pathName === '/') {
         if (queryData.id === undefined) {
-            // fs.readdir('./data', function (error, fileList) {
-            //     const title = 'Welcome';
-            //     const list = templateList(fileList);
-            //     const description = 'Hello, Node.js';
-            //     const template = templateHTML(title, list,
-            //         `<h2>${title}</h2>
-            //         <p>${description}</p>`,
-            //         `<a href="/create">Create</a>`
-            //     );
-
-            //     response.writeHead(200);
-            //     response.end(template);
-            // });
             db.query(`SELECT * FROM topic`, function (error, topics, ) {
-                console.log(topics);
                 const title = 'Welcome';
                 const description = 'Hello, Node.js';
                 const list = templateList(topics);
@@ -50,26 +36,29 @@ const app = http.createServer(function (request, response) {
                 response.end(template);
             });
         } else {
-            fs.readdir('./data', function (error, fileList) {
-                const filteredId = path.parse(queryData.id).base;
-                fs.readFile(`data/${filteredId}`, 'utf8', function (err, description) {
-                    const title = queryData.id;
-                    const sanitizedTitle = sanitizeHtml(title);
-                    const sanitizedDes = sanitizeHtml(description);
-                    const list = templateList(fileList);
-                    const html = templateHTML(title, list,
-                        `<h2>${sanitizeHtml}</h2>
-                        <p>${sanitizedDes}</p>`,
+            db.query(`SELECT * FROM topic`, function (error, topics) {
+                if (error) {
+                    throw error;
+                }
+                db.query(`SELECT * FROM topic WHERE id=?`, [queryData.id], function (error2, topic) {
+                    if (error2) {
+                        throw error2;
+                    }
+                    const title = topic[0].title;
+                    const description = topic[0].description;
+                    const list = templateList(topics);
+                    const template = templateHTML(title, list,
+                        `<h2>${title}</h2>
+                        <p>${description}</p>`,
                         `<a href="/create">Create</a> 
-                         <a href="/update?id=${sanitizeHtml}">update</a>
-                         <form action="delete_process" method="post">
-                            <input type="hidden" name="id" value="${sanitizeHtml}">
+                        <a href="/update?id=${queryData.id}">update</a>
+                        <form action="delete_process" method="post">
+                            <input type="hidden" name="id" value="${queryData.id}">
                             <input type="submit" value="delete">
-                         </form>`
+                        </form>`
                     );
-
                     response.writeHead(200);
-                    response.end(html);
+                    response.end(template);
                 });
             });
         }
