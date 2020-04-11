@@ -5,6 +5,14 @@ const qs = require('querystring');
 const template = require('./lib/template');
 const path = require('path');
 const sanitizeHtml = require('sanitize-html');
+const mysql = require('mysql');
+const db = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'tae9205',
+    database: 'opentutorials'
+});
+db.connect();
 
 const templateList = template.list;
 const templateHTML = template.html;
@@ -15,20 +23,32 @@ const app = http.createServer(function (request, response) {
     const pathName = url.parse(_url, true).pathname;
     if (pathName === '/') {
         if (queryData.id === undefined) {
+            // fs.readdir('./data', function (error, fileList) {
+            //     const title = 'Welcome';
+            //     const list = templateList(fileList);
+            //     const description = 'Hello, Node.js';
+            //     const template = templateHTML(title, list,
+            //         `<h2>${title}</h2>
+            //         <p>${description}</p>`,
+            //         `<a href="/create">Create</a>`
+            //     );
 
-            fs.readdir('./data', function (error, fileList) {
+            //     response.writeHead(200);
+            //     response.end(template);
+            // });
+            db.query(`SELECT * FROM topic`, function (error, topics, ) {
+                console.log(topics);
                 const title = 'Welcome';
-                const list = templateList(fileList);
                 const description = 'Hello, Node.js';
+                const list = templateList(topics);
                 const template = templateHTML(title, list,
                     `<h2>${title}</h2>
-                    <p>${description}</p>`,
+                            <p>${description}</p>`,
                     `<a href="/create">Create</a>`
                 );
-
                 response.writeHead(200);
                 response.end(template);
-            })
+            });
         } else {
             fs.readdir('./data', function (error, fileList) {
                 const filteredId = path.parse(queryData.id).base;
