@@ -27,13 +27,13 @@ const app = http.createServer(function (request, response) {
                 const title = 'Welcome';
                 const description = 'Hello, Node.js';
                 const list = templateList(topics);
-                const template = templateHTML(title, list,
+                const html = templateHTML(title, list,
                     `<h2>${title}</h2>
                             <p>${description}</p>`,
                     `<a href="/create">Create</a>`
                 );
                 response.writeHead(200);
-                response.end(template);
+                response.end(html);
             });
         } else {
             db.query(`SELECT * FROM topic`, function (error, topics) {
@@ -47,7 +47,7 @@ const app = http.createServer(function (request, response) {
                     const title = topic[0].title;
                     const description = topic[0].description;
                     const list = templateList(topics);
-                    const template = templateHTML(title, list,
+                    const html = templateHTML(title, list,
                         `<h2>${title}</h2>
                         <p>${description}</p>`,
                         `<a href="/create">Create</a> 
@@ -58,7 +58,7 @@ const app = http.createServer(function (request, response) {
                         </form>`
                     );
                     response.writeHead(200);
-                    response.end(template);
+                    response.end(html);
                 });
             });
         }
@@ -66,7 +66,7 @@ const app = http.createServer(function (request, response) {
         db.query(`SELECT * FROM topic`, function (error, topics) {
             const title = 'Create';
             const list = templateList(topics);
-            const template = templateHTML(title, list, `
+            const html = templateHTML(title, list, `
                 <form action="/create_process" method="post">
                     <p>
                         <input type="text" name="title" placeholder="title">
@@ -80,7 +80,7 @@ const app = http.createServer(function (request, response) {
                 </form>`
                 , '');
             response.writeHead(200);
-            response.end(template);
+            response.end(html);
         });
     } else if (pathName === '/create_process') {
         let body = '';
@@ -104,29 +104,32 @@ const app = http.createServer(function (request, response) {
                 });
         });
     } else if (pathName === '/update') {
-        fs.readdir('./data', function (error, fileList) {
-            const filteredId = path.parse(queryData.id).base;
-            fs.readFile(`data/${filteredId}`, 'utf8', function (err, description) {
-                const title = queryData.id;
-                const list = templateList(fileList);
-                const html = templateHTML(title, list,
-                    `
-                    <form action="/update_process" method="post">
-                        <input type="hidden" name="id" value="${title}">
-                        <p>
-                            <input type="text" name="title" placeholder="title" value="${title}">
-                        </p>
-                        <p>
-                            <textarea name="description" placeholder="description">${description}</textarea>
-                        </p>
-                        <p>
-                            <input type="submit">
-                        </p>
-                    </form>
-                    `,
-                    `<a href="/create">Create</a> <a href="/update?id=${title}">update</a>`
-                );
-
+        db.query(`SELECT * FROM topic`, function (error, topics) {
+            if (error) {
+                throw error;
+            }
+            db.query(`SELECT * FROM topic WHERE id=?`, [queryData.id], function (error2, topic) {
+                if (error2) {
+                    throw error2;
+                }
+                const title = topic[0].title;
+                const _id = topic[0].id;
+                const description = topic[0].description;
+                const list = templateList(topics);
+                const html = templateHTML(title, list, `
+                <form action="/update_process" method="post">
+                    <input type="hidden" name="id" value="${_id}">
+                    <p>
+                        <input type="text" name="title" placeholder="title" value="${title}">
+                    </p>
+                    <p>
+                        <textarea name="description" placeholder="description">${description}</textarea>
+                    </p>
+                    <p>
+                        <input type="submit">
+                    </p>
+                </form>`
+                    , '');
                 response.writeHead(200);
                 response.end(html);
             });
@@ -138,15 +141,18 @@ const app = http.createServer(function (request, response) {
         });
         request.on('end', function () {
             const post = qs.parse(body);
-            const id = post.id;
+            const _id = post.id;
             const title = post.title;
             const description = post.description;
-            fs.rename(`data/${id}`, `data/${title}`, function (error) {
-                fs.writeFile(`data/${title}`, description, 'utf8', (err) => {
-                    response.writeHead(302, { Location: `/?id=${title}` });
+            console.log(post)
+            db.query(
+                `UPDATE topic SET title=?, description=? WHERE id=?`,
+                [title, description, _id],
+                function (error, result) {
+                    if (error) { throw error; }
+                    response.writeHead(302, { Location: `/?id=${_id}` });
                     response.end('success');
                 });
-            })
         });
     } else if (pathName === '/delete_process') {
         let body = '';
