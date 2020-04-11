@@ -144,7 +144,6 @@ const app = http.createServer(function (request, response) {
             const _id = post.id;
             const title = post.title;
             const description = post.description;
-            console.log(post)
             db.query(
                 `UPDATE topic SET title=?, description=? WHERE id=?`,
                 [title, description, _id],
@@ -161,12 +160,15 @@ const app = http.createServer(function (request, response) {
         });
         request.on('end', function () {
             const post = qs.parse(body);
-            const id = post.id;
-            const filteredId = path.parse(id).base;
-            fs.unlink(`data/${filteredId}`, function (error) {
-                response.writeHead(302, { Location: `/` });
-                response.end('success');
-            })
+            const _id = post.id;
+            db.query(
+                `DELETE FROM topic WHERE id=?`,
+                [_id],
+                function (error) {
+                    response.writeHead(302, { Location: `/` });
+                    response.end('success');
+                }
+            )
         });
     } else {
         response.writeHead(404);
